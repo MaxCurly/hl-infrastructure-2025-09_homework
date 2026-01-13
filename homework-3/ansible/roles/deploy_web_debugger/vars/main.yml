@@ -1,0 +1,5 @@
+---
+# vars file for deploy_web_debugger
+
+deploy_web_debugger_project_src   : /etc/docker/web_debugger
+deploy_web_debugger_image_version : v1.2.1

@@ -1,0 +1,4 @@
+inventory_roles:
+  - deploy_docker
+  - deploy_web_debugger
+  - deploy_angie_backend

@@ -1,0 +1,16 @@
+services:
+
+  angie:
+    image: docker.angie.software/angie:{{ deploy_angie_image_version }}
+    hostname: angie
+    container_name: angie
+    restart: always
+    mem_limit: 100M
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - {{ deploy_angie_project_src }}/angie.conf:/etc/angie/angie.conf:ro
+      - {{ deploy_angie_project_src }}/http.d/:/etc/angie/http.d:ro
+      - /var/log/angie:/var/log/angie:rw
+      - /usr/share/zoneinfo/Europe/Moscow:/etc/localtime:ro

@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_web_debugger
+
+- name: restart_web_debugger
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_web_debugger_project_src }}"
+    state: restarted
