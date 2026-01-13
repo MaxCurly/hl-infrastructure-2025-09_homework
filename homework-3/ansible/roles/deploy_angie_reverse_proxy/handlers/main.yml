@@ -1,0 +1,12 @@
+---
+# handlers file for deploy_angie_reverse_proxy
+
+- name: reload_angie
+  community.docker.docker_container_exec:
+    container: "angie"
+    command: "angie -s reload"
+
+- name: restart_angie
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_angie_project_src }}"
+    state: restarted
