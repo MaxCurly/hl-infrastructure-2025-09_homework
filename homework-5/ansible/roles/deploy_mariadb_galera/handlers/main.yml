@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_mariadb_galera
+
+- name: restart_mariadb_galera
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_mariadb_galera_project_src }}"
+    state: restarted

@@ -1,0 +1,4 @@
+---
+# vars file for upload_database
+
+deploy_mariadb_galera_project_src   : /etc/docker/mariadb-galera
