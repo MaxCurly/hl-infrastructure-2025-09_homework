@@ -1,0 +1,29 @@
+---
+# tasks file for upload_database
+
+- name: install require packets
+  ansible.builtin.apt:
+    name:
+      - mariadb-client
+      - python3-pymysql
+    state: present
+    update_cache: true
+
+- name: copy a file {{ deploy_mariadb_galera_project_src }}/data/world.sql
+  ansible.builtin.copy:
+    src: world.sql
+    dest: "{{ deploy_mariadb_galera_project_src }}/data/world.sql"
+    owner: root
+    group: root
+    mode: '0444'
+    backup: false
+
+- name: restore dump
+  delegate_to: 10.10.5.101
+  community.mysql.mysql_db:
+    name: all
+    state: import
+    target: "{{ deploy_mariadb_galera_project_src }}/data/world.sql"
+    login_user: root
+    login_password: 12345678
+    login_host: 10.10.5.101

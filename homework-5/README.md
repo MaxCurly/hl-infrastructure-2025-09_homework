@@ -1,0 +1,99 @@
+Домашнее задание по теме "MySQL - кластер // ДЗ"
+
+Данное задание реализовано при помощи использования следующих инструментов:
+- terraform v1.13.1 (должен быть у вас установлен)
+- terragrunt v0.86.2 (должен быть у вас установлен)
+- provider registry.terraform.io/bpg/proxmox v0.82.1 (скачивается при выполнении "terragrunt init")
+- ansible v2.18.8 (должен быть у вас установлен)
+
+Создание ВМ происходит при помощи terragrunt в роли враппера над terraform. ВМ создается в два этапа:
+- Загрузка cloud-диска c с репозитория ubuntu
+- Создание ВМ с импортом загруженного cloud-диска (при развертывании ВМ отрабатывает cloud-init)
+
+Инструкция по созданию ВМ:
+
+1. Необходимо сделать экспорт учетных данных для подключения к proxmox в переменные среды:
+```
+export PROXMOX_VE_API_TOKEN='username@realm!tokenid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+```
+```
+export PROXMOX_VE_SSH_USERNAME='username@realm'
+```
+```
+export PROXMOX_VE_SSH_PASSWORD='a-strong-password'
+```
+2. Переходим в директорию с ресурсом, описывающим cloud-диск
+```
+cd ./terragrunt/root/proxmox/cloudimg/ubuntu_24.04_noble_server_cloudimg_amd64_20260108
+```
+3. Запускаем инициализацию terraform провайдера, планирование и создание ресурса
+```
+terragrunt init
+terragrunt plan
+terragrunt apply
+```
+4. Переходим в директорию с ресурсом, описывающим ВМ c балансировщиком
+```
+cd ../../vms/db01/
+```
+5. Запускаем инициализацию terraform провайдера, планирование и создание ресурсов
+```
+terragrunt init
+terragrunt plan
+terragrunt apply
+```
+6. Переходим в директорию с ресурсом, описывающим ВМ с первым бекендом
+```
+cd ../db02/
+```
+7. Запускаем инициализацию terraform провайдера, планирование и создание ресурсов
+```
+terragrunt init
+terragrunt plan
+terragrunt apply
+```
+8. Переходим в директорию с ресурсом, описывающим ВМ со вторым бекендом
+```
+cd ../db03/
+```
+9. Запускаем инициализацию terraform провайдера, планирование и создание ресурсов
+```
+terragrunt init
+terragrunt plan
+terragrunt apply
+```
+
+Инструкция по настройке ВМ:
+
+2. Переходим в директорию с проектом ansible
+```
+cd ./ansible/
+```
+3. Запускаем автоматизацию при помощи ansible для каждой из групп хостов
+```
+ansible-playbook -i inventories/db/main.yml main.yml
+```
+
+
+
+
+
+
+
+
+
+
+
+На вложенных скриншотах отражена работа репликации через galera-cluster:
+
+homework-5-1.png: статус galera-cluster на db01
+
+homework-5-2.png: статус galera-cluster на db01
+
+homework-5-3.png: статус galera-cluster на db03
+
+homework-5-4.png: загруженная база world на db01
+
+homework-5-5.png: среплицированная база world на db02
+
+homework-5-6.png: среплицированная база world на db03

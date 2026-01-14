@@ -1,0 +1,24 @@
+services:
+
+  db:
+    image: mariadb:{{ deploy_mariadb_galera_image_version }}   
+    container_name: mariadb-galera
+    hostname: mariadb-galera
+    network_mode: host
+    restart: always
+    volumes:
+      - {{ deploy_mariadb_galera_project_src }}/mariadb.cnf:/etc/mysql/mariadb.cnf:ro
+      - {{ deploy_mariadb_galera_project_src }}/mariadb.conf.d/60-galera.cnf:/etc/mysql/mariadb.conf.d/60-galera.cnf:ro
+      - {{ deploy_mariadb_galera_project_src }}/data:/var/lib/mysql:rw
+    environment:
+      GALERA_FORCE_SAFE_TO_BOOTSTRAP: 1
+      WSREP_AUTO_BOOTSTRAP: 1
+      WSREP_PROVIDER_OPTIONS: "pc.ignore_sb=true;pc.ignore_quorum=true;evs.auto_evict=5"
+#      MARIADB_ROOT_PASSWORD_HASH: "*664C22879D051AD30FFC480342561C7F9755095A"
+      MYSQL_ROOT_PASSWORD: 12345678
+    command: [
+{% if ansible_host == "10.10.5.101" %}
+      '--wsrep-new-cluster',
+{% endif %}
+      '--wsrep-node-address={{ ansible_host }}'
+    ]
