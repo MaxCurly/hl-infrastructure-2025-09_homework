@@ -1,0 +1,31 @@
+---
+# tasks file for deploy_etcd
+
+- name: template a file /etc/default/etcd
+  ansible.builtin.template:
+    src: etcd.j2
+    dest: /etc/default/etcd
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart_etcd_and_etcd2
+
+- name: install etcd-server version={{ deploy_etcd_etcd_server_ver }} and etcd-client version={{ deploy_etcd_etcd_client_ver }}
+  ansible.builtin.apt:
+    name:
+      - "etcd-server={{ deploy_etcd_etcd_server_ver }}"
+      - "etcd-client={{ deploy_etcd_etcd_client_ver }}"
+    state: present
+    update_cache: true
+
+- name: start and enable etcd and etcd2
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - etcd
+    - etcd2
+
+- name: force handlers to run now
+  ansible.builtin.meta: flush_handlers

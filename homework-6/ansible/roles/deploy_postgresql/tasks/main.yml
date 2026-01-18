@@ -1,0 +1,33 @@
+---
+# tasks file for deploy_postgresql
+
+- name: download postgresql GPG key
+  ansible.builtin.get_url:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    dest: /etc/apt/keyrings/postgresql.asc
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: add postgresql repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/postgresql.asc] https://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
+    state: present
+    filename: postgresql
+
+- name: install postgresql-18
+  ansible.builtin.apt:
+    name:
+      - "postgresql-18={{ deploy_postgresql_postgresql_ver }}"
+    state: present
+    update_cache: true
+  notify: clear_data_dir
+
+- name: stop and disable postgresql
+  ansible.builtin.service:
+    name: postgresql
+    state: stopped
+    enabled: no
+
+- name: force handlers to run now
+  ansible.builtin.meta: flush_handlers

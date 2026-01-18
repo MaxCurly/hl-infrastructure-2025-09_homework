@@ -1,0 +1,99 @@
+scope: patroni
+namespace: postgresql
+name: {{ansible_hostname}}
+
+log:
+  type: plain
+  level: INFO
+  traceback_level: ERROR
+  format: '%(asctime)s %(levelname)s: %(message)s'
+  max_queue_size: 1000
+  dir: /var/log/patroni
+  file_size: 10485760
+  file_num: 10
+
+bootstrap:
+  dcs:
+    loop_wait: 10
+    ttl: 30
+    retry_timeout: 10
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        hot_standby: 'on'
+        max_connections: 100
+        max_locks_per_transaction: 64
+        max_prepared_transactions: 0
+        max_replication_slots: 10
+        max_wal_senders: 10
+        max_worker_processes: 8
+        track_commit_timestamp: 'off'
+        wal_keep_size: 128MB
+        wal_level: replica
+        wal_log_hints: 'on'
+#        users:
+#          postgres:
+#            password: 'postgres'
+#            options:
+#              - createrole
+#              - createdb
+#      pg_hba:
+#        - local all all           scram-sha-256
+#        - host  all all 0.0.0.0/0 scram-sha-256
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+    - locale: UTF8
+
+etcd3:
+  hosts: 
+    - 10.10.5.101:2379
+    - 10.10.5.102:2379
+    - 10.10.5.103:2379
+
+postgresql:
+  authentication:
+    superuser:
+      username: postgres
+      password: 'postgres'
+    replication:
+      username: replicator
+      password: 'replicator'
+    rewind:
+      username: rewinder
+      password: 'rewinder'
+  connect_address: {{ ansible_host }}:5432
+  data_dir: /var/lib/postgresql/18/main
+  config_dir: /etc/postgresql/18/main
+  bin_dir: /usr/lib/postgresql/18/bin/
+  listen: 0.0.0.0:5432
+  pg_hba:
+    - local all all           scram-sha-256
+    - host  all all 0.0.0.0/0 scram-sha-256
+    - host replication replicator 10.10.5.101/32 scram-sha-256
+    - host replication replicator 10.10.5.102/32 scram-sha-256
+    - host replication replicator 10.10.5.103/32 scram-sha-256
+  parameters:
+    users:
+    postgres:
+      password: 'postgres'
+      options:
+        - createrole
+        - createdb
+    password_encryption: scram-sha-256
+
+
+
+restapi:
+  connect_address: {{ ansible_host}}:8008
+  listen: 0.0.0.0:8008
+
+tags:
+  clonefrom: true
+  noloadbalance: false
+  nosync: false
+  sync_priority: 1
+  nofailover: false
+  failover_priority: 1
+  nostream: false

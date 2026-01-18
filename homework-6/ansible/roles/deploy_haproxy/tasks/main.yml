@@ -1,0 +1,27 @@
+---
+# tasks file for deploy_haproxy
+
+- name: install haproxy
+  ansible.builtin.apt:
+    name:
+      - "haproxy={{ deploy_haproxy_haproxy_ver }}"
+    state: present
+    update_cache: true
+
+- name: template a file /etc/haproxy/haproxy.cfg
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart_haproxy
+
+- name: start and enable haproxy
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: yes
+
+- name: force handlers to run now
+  ansible.builtin.meta: flush_handlers

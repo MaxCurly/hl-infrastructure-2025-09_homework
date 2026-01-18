@@ -1,0 +1,5 @@
+inventory_roles:
+  - deploy_etcd
+  - deploy_postgresql
+  - deploy_patroni
+  - upload_database

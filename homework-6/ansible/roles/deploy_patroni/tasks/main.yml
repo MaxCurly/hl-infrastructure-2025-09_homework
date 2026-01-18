@@ -1,0 +1,36 @@
+---
+# tasks file for deploy_patroni
+
+- name: create directory for logs
+  ansible.builtin.file:
+    path: /var/log/patroni
+    state: directory
+    owner: root
+    group: root
+    mode: '0777'
+
+- name: install patroni
+  ansible.builtin.apt:
+    name:
+      - "patroni={{ deploy_patroni_patroni_ver }}"
+    policy_rc_d: 101
+    state: present
+    update_cache: true
+
+- name: template a file /etc/patroni/config.yaml
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: /etc/patroni/config.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload_patroni_via_api
+
+- name: start and enable patroni
+  ansible.builtin.service:
+    name: patroni
+    state: started
+    enabled: yes
+
+- name: force handlers to run now
+  ansible.builtin.meta: flush_handlers

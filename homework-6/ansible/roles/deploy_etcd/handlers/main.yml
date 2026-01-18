@@ -1,0 +1,11 @@
+---
+# handlers file for deploy_etcd
+
+- name: restart_etcd_and_etcd2
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - etcd
+    - etcd2

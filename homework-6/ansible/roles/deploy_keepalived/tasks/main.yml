@@ -1,0 +1,53 @@
+---
+# tasks file for deploy_keepalived
+
+- name: create a group "keepalived_script"
+  ansible.builtin.group:
+    name: keepalived_script
+    gid: 979
+    system: true
+    state: present
+
+- name: create a user "keepalived_script"
+  ansible.builtin.user:
+    name: keepalived_script
+    uid: 979
+    comment: keepalived_script
+    group: keepalived_script
+    shell: /usr/sbin/nologin
+    create_home: no
+#    home: ""
+    system: true
+    state: present
+
+- name: install keepalived version={{ deploy_keepalived_ver }}
+  ansible.builtin.apt:
+    name: "keepalived={{ deploy_keepalived_ver }}"
+    state: present
+    update_cache: true
+
+- name: template a file /etc/keepalived/keepalived.conf
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_keepalived
+
+- name: copy a file /etc/keepalived/check_haproxy
+  ansible.builtin.copy:
+    src: check_haproxy
+    dest: /etc/keepalived/check_haproxy
+    owner: root
+    group: keepalived_script
+    mode: '0750'
+    backup: true
+  notify: restart_keepalived
+
+- name: start and enable keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: started
+    enabled: yes
