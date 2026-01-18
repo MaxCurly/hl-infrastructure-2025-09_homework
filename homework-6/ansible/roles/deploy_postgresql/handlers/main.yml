@@ -1,0 +1,16 @@
+---
+# handlers file for deploy_postgresql
+
+- name: clear_data_dir
+  ansible.builtin.file:
+    path: /var/lib/postgresql/18/main
+    state: absent
+  notify: recreate_data_dir
+
+- name: recreate_data_dir
+  ansible.builtin.file:
+    path: /var/lib/postgresql/18/main
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'

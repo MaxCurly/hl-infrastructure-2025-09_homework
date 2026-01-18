@@ -1,0 +1,4 @@
+---
+# vars file for deploy_postgresql
+
+deploy_postgresql_postgresql_ver : 18.1-1.pgdg24.04+2

@@ -1,0 +1,29 @@
+---
+# tasks file for upload_database
+
+- name: copy a file {{ deploy_mariadb_galera_project_src }}/data/world.sql
+  ansible.builtin.copy:
+    src: dvdrental.tar
+    dest: /tmp/dvdrental.tar
+    owner: root
+    group: root
+    mode: '0444'
+    backup: false
+
+- name: create a new database with name "dvdrental"
+  community.postgresql.postgresql_db:
+    name: dvdrental
+    login_host: 10.10.5.100
+    login_port: 5433
+    login_user: postgres
+    login_password: postgres
+
+- name: restore database using the tar format
+  community.postgresql.postgresql_db:
+    name: dvdrental
+    state: restore
+    target: /tmp/dvdrental.tar
+    login_host: 10.10.5.100
+    login_port: 5433
+    login_user: postgres
+    login_password: postgres

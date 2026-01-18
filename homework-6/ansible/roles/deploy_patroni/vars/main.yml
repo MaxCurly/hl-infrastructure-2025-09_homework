@@ -1,0 +1,4 @@
+---
+# vars file for deploy_patroni
+
+deploy_patroni_patroni_ver : 4.1.0-2.pgdg24.04+1

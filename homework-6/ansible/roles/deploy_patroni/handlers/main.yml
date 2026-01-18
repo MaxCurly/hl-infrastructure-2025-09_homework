@@ -1,0 +1,8 @@
+---
+# handlers file for deploy_patroni
+
+- name: reload_patroni_via_api
+  uri:
+    url: http://localhost:8008/reload
+    method: POST
+    status_code: 202
