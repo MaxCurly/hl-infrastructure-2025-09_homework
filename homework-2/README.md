@@ -57,6 +57,6 @@ ansible-playbook -i inventories/node/main.yml main.yml
 ```
 
 
-На вложенных скриншотах отражена работа patroni кластера:
+На вложенных скриншотах отражена работа iscsi таргета и gfs2 кластера:
 
 homework-2.png: статус iscsi target сервера, статус ресурсов pacemaker, монтирования gfs2 и наличия тестовых файлов на нодах кластера
