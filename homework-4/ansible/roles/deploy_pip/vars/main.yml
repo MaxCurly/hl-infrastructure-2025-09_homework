@@ -1,0 +1,4 @@
+---
+# vars file for deploy_pip
+
+deploy_pip_ver : 22.0.2+dfsg-1ubuntu0.6

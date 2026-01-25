@@ -1,0 +1,161 @@
+---
+# tasks file for deploy_mysql
+
+- name: install mysql-client version={{ deploy_mysql_mysql_client_ver }}
+  ansible.builtin.apt:
+    name: mysql-client
+#    name: "mysql-client={{ deploy_mysql_mysql_client_ver }}"
+    state: present
+
+- name: create a directory {{ deploy_mysql_project_src }}
+  ansible.builtin.file:
+    path: "{{ deploy_mysql_project_src }}"
+    state: directory
+    mode: '0777'
+    owner: root
+    group: root
+
+- name: create a directory {{ deploy_mysql_project_src }}/data
+  ansible.builtin.file:
+    path: "{{ deploy_mysql_project_src }}/data"
+    state: directory
+    mode: '0777'
+    owner: root
+    group: root
+
+- name: template a file {{ deploy_mysql_project_src }}/my.cnf
+  ansible.builtin.template:
+    src: my.cnf.j2
+    dest: "{{ deploy_mysql_project_src }}/my.cnf"
+    owner: root
+    group: root
+    mode: '0444'
+    backup: true
+  notify: restart_mysql
+
+- name: template a file {{ deploy_mysql_project_src }}/docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_mysql_project_src }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_mysql
+
+- name: create and start mysql version={{ deploy_mysql_image_version }}
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_mysql_project_src }}"
+    state: present
+
+- name: pause for 15 seconds while mysql is starting
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: install PyMySQL version={{ deploy_PyMySQL_ver }}
+  ansible.builtin.apt:
+    name: python3-pymysql
+#    name: "PyMySQL=={{ deploy_PyMySQL_ver }}"
+
+- name: create replicator user {{ deploy_mysql_replica_user }}
+  community.mysql.mysql_user:
+    login_user: root
+    login_password: "{{ deploy_mysql_root_pass }}"
+    name: "{{ deploy_mysql_replica_user }}"
+    host: "{{ deploy_sql_slave_ip }}"
+    password: "{{ deploy_mysql_replica_pass }}"
+    priv: "*.*:REPLICATION SLAVE"
+    state: present
+  when: deploy_mysql_role == "master"
+
+- name: change master on slave
+  community.mysql.mysql_replication:
+     mode: changeprimary
+     master_host: "{{ deploy_sql_master_ip }}"
+     master_user: "{{ deploy_mysql_replica_user }}"
+     master_password: "{{ deploy_mysql_replica_pass }}"
+     master_auto_position: true
+     login_user: root
+     login_password: "{{ deploy_mysql_root_pass }}"
+  when: deploy_mysql_role == 'slave'
+
+- name: start replica
+  community.mysql.mysql_replication:
+     mode: startreplica
+     login_user: root
+     login_password: "{{ deploy_mysql_root_pass }}"
+  when: deploy_mysql_role == "slave"
+
+- name: create database {{ deploy_mysql_db_name }}
+  community.mysql.mysql_db:
+    login_user: root
+    login_password: "{{ deploy_mysql_root_pass }}"
+    name: "{{ deploy_mysql_db_name }}"
+    state: present
+  when: deploy_mysql_role == "master"
+
+- name: create database user {{ deploy_mysql_db_user }}
+  community.mysql.mysql_user:
+    login_user: root
+    login_password: "{{ deploy_mysql_root_pass }}"
+    name: "{{ deploy_mysql_db_user }}"
+    host: '%'
+    password: "{{ deploy_mysql_db_password }}"
+    priv: "{{ deploy_mysql_db_name }}.*:ALL"
+    state: present
+  when: deploy_mysql_role == "master"
+
+- name: template a file {{ deploy_mysql_project_src }}/mysqldump.sh
+  ansible.builtin.template:
+    src: mysqldump.sh.j2
+    dest: "{{ deploy_mysql_project_src }}/mysqldump.sh"
+    owner: root
+    group: root
+    mode: '0744'
+    backup: true
+  when: deploy_mysql_role == "slave"
+
+- name: cron mysqldump job
+  ansible.builtin.cron:
+    name: mysqldump
+    weekday: "*"
+    month: "*"
+    day: "*"
+    hour: "*"
+    minute: "0"
+    user: root
+    job: "/etc/docker/mysql/mysqldump.sh"
+  when: deploy_mysql_role == "slave"
+
+#- name: Dump database {{ deploy_mysql_db_name }}
+# community.mysql.mysql_db:
+#    login_host: "{{ deploy_sql_master_ip }}"
+#    login_user: root
+#    login_password: "{{ deploy_mysql_root_pass }}"
+#    name: "{{ deploy_mysql_db_name }}"
+#    state: dump
+#    target: /mnt/nfs/mysql/backup/wordpress.sql
+#    force: true
+#  when: deploy_mysql_role == "master"
+
+#- name: Find .sql files on the target host
+#  ansible.builtin.find:
+#    paths: "{{ deploy_mysql_data_src }}/mnt/nfs/mysql/mysql-backup"
+#    patterns: "*.sql"
+#    recurse: no
+#  register: sql_files
+#  when: deploy_mysql_role == "master"
+#  delegate_to: "{{ deploy_sql_master_ip }}"
+
+#- name: import database {{ deploy_mysql_db_name }}
+#  community.mysql.mysql_db:
+#    login_host: "{{ deploy_sql_master_ip }}"
+#    login_user: root
+#    login_password: "{{ deploy_mysql_root_pass }}"
+#    name: "{{ deploy_mysql_db_name }}"
+#    state: import
+#    target: "{{ item.path }}"
+##    target: /mnt/nfs/mysql/backup/wordpress.sql
+#    force: true
+#  loop: "{{ sql_files.files }}"
+#  when: deploy_mysql_role == "master"

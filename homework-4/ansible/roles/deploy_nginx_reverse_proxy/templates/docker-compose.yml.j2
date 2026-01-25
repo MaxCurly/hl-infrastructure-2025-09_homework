@@ -1,0 +1,18 @@
+services:
+ 
+  nginx:
+    image: nginx:{{ deploy_nginx_image_version }}
+    hostname: nginx
+    container_name: nginx
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - {{ deploy_nginx_project_src }}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - {{ deploy_nginx_project_src }}/conf.d/:/etc/nginx/conf.d:ro
+      - {{ deploy_nginx_project_src }}/ssl/:/etc/nginx/ssl:ro
+      - {{ deploy_nginx_project_src }}/html/:/usr/share/nginx/html:ro
+      - /var/log/nginx:/var/log/nginx:rw
+    environment:
+      TZ: "Europe/Moscow"

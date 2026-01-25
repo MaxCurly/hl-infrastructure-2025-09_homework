@@ -1,0 +1,24 @@
+---
+# tasks file for deploy_pacemaker
+
+- name: install pacemaker
+  ansible.builtin.apt:
+    name:
+      - "pacemaker={{ deploy_pacemaker_pacemaker_ver }}"
+      - "pcs={{ deploy_pacemaker_pcs_ver }}"
+      - resource-agents-extra
+    state: present
+    update_cache: true
+
+- name: start and enable pcsd
+  ansible.builtin.service:
+    name: pcsd
+    state: started
+    enabled: yes
+
+- name: configure pacemaker
+  shell: |
+    pcs property set stonith-enabled=false
+    pcs property set no-quorum-policy=freeze
+  when: ansible_host == "10.10.5.101"
+  ignore_errors: yes

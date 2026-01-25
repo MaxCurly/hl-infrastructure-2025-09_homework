@@ -1,0 +1,12 @@
+all:
+  children:
+    lb:
+      hosts:
+        lb01:
+        lb02:
+
+  hosts:
+    lb01:
+      ansible_host: 10.10.5.111
+    lb02:
+      ansible_host: 10.10.5.112
