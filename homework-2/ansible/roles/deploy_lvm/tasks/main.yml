@@ -1,0 +1,50 @@
+---
+# tasks file for deploy_lvm
+
+- name: install packets
+  ansible.builtin.apt:
+    name:
+      - "lvm2={{ deploy_lvm_lvm2_ver }}"
+      - "lvm2-lockd={{ deploy_lvm_lvm2_lockd_ver }}"
+      - "dlm-controld={{ deploy_lvm_dlm_controld_ver }}"
+    state: present
+    update_cache: true
+
+- name: template a file /etc/lvm/lvm.conf
+  ansible.builtin.copy:
+    src: lvm.conf
+    dest: /etc/lvm/lvm.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: configure lvm
+  shell: |
+    vgcreate -Ay -y --shared cluster_vg /dev/sdb
+    lvcreate -l 100%FREE -n cluster_lv cluster_vg
+  when: ansible_host == "10.10.5.101"
+  ignore_errors: yes
+
+- name: configure pacemaker
+  shell: |
+    pcs resource create dlm systemd:dlm op monitor interval=30s on-fail=ignore clone interleave=true ordered=true
+    pcs resource create lvmlockd systemd:lvmlockd op monitor interval=30s on-fail=ignore clone interleave=true ordered=true
+    pcs constraint order start dlm-clone then lvmlockd-clone
+    pcs constraint colocation add lvmlockd-clone with dlm-clone
+  when: ansible_host == "10.10.5.101"
+  ignore_errors: yes
+
+- name: configure lvm locking
+  shell: |
+    vgchange --lockstart cluster_vg
+  ignore_errors: yes
+
+- name: configure pacemaker
+  shell: |
+    pcs resource create lvm_cluster ocf:heartbeat:LVM-activate lvname=cluster_lv vgname=cluster_vg vg_access_mode=lvmlockd activation_mode=shared op monitor interval=30s on-fail=ignore clone interleave=true ordered=true
+    pcs constraint order start lvmlockd-clone then lvm_cluster
+    pcs constraint colocation add lvm_cluster with lvmlockd-clone
+    pcs resource delete lvm_cluster
+    pcs resource create lvm_cluster ocf:heartbeat:LVM-activate lvname=cluster_lv vgname=cluster_vg vg_access_mode=lvmlockd activation_mode=shared op monitor interval=30s on-fail=ignore clone interleave=true ordered=true
+  when: ansible_host == "10.10.5.101"
+  ignore_errors: yes

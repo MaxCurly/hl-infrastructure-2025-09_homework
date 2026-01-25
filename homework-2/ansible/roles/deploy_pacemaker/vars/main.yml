@@ -1,0 +1,5 @@
+---
+# vars file for deploy_pacemaker
+
+deploy_pacemaker_pacemaker_ver : 2.1.6-5ubuntu2
+deploy_pacemaker_pcs_ver       : 0.11.7-1ubuntu1

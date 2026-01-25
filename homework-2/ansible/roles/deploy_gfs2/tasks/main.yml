@@ -1,0 +1,37 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for deploy_gfs2
+
+- name: install packets
+  ansible.builtin.apt:
+    name:
+      - "gfs2-utils={{ deploy_gfs2_gfs2_utils_ver }}"
+      - linux-modules-extra-6.8.0-90-generic
+    state: present
+    update_cache: true
+
+- name: create a directory /mnt/gfs2
+  ansible.builtin.file:
+    path: /mnt/gfs2
+    state: directory
+    mode: '0755'
+
+- name: configure gfs2
+  shell: |
+    yes | mkfs.gfs2 -j3 -p lock_dlm -t corosync:gfs2 /dev/cluster_vg/cluster_lv
+  when: ansible_host == "10.10.5.101"
+  ignore_errors: yes
+
+- name: configure pacemaker
+  shell: |
+    pcs resource create fs_cluster ocf:heartbeat:Filesystem device="/dev/cluster_vg/cluster_lv" directory="/mnt/gfs2" fstype="gfs2" "options=noatime" op monitor interval=10s on-fail=ignore clone interleave=true
+    pcs constraint order start lvm_cluster-clone then fs_cluster-clone
+    pcs constraint colocation add fs_cluster-clone with lvm_cluster-clone
+  when: ansible_host == "10.10.5.101"
+  ignore_errors: yes
+
+- name: create test file
+  ansible.builtin.file:
+    path: "/mnt/gfs2/{{ ansible_hostname }}_test.tmp"
+    state: touch
+    mode: '0755'
