@@ -1,0 +1,15 @@
+---
+# tasks file for deploy_iscsi_client
+
+- name: install open-iscsi
+  ansible.builtin.apt:
+    name:
+      - "open-iscsi={{ deploy_iscsi_client_open_iscsi_ver }}"
+    state: present
+    update_cache: true
+
+- name: connect iSCSI target with shell
+  shell: |
+    iscsiadm -m discovery -p 10.10.5.100 -t st
+    iscsiadm -m node -T iqn.2026-01.ru.otus:target01 -p 10.10.5.100 -l
+  ignore_errors: yes

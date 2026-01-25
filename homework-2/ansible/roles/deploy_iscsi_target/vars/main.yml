@@ -1,0 +1,4 @@
+---
+# vars file for deploy_iscsi_target
+
+deploy_iscsi_target_targetcli_fb_ver : 1:2.1.53-1ubuntu3

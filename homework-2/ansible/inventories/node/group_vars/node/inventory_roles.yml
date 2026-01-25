@@ -1,0 +1,6 @@
+inventory_roles:
+  - deploy_iscsi_client
+  - deploy_corosync
+  - deploy_pacemaker
+  - deploy_lvm
+  - deploy_gfs2
