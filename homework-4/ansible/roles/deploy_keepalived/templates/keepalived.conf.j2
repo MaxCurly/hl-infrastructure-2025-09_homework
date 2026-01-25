@@ -1,0 +1,37 @@
+global_defs {
+  router_id {{ deploy_keepalived_router_id }}
+  enable_script_security
+  script_security 2
+  script_user keepalived_script
+  max_auto_priority 2
+}
+
+vrrp_script {{ deploy_keepalived_script_name }} {
+  script "{{ deploy_keepalived_script_path }}"
+  interval 1
+  timeout 1
+  weight -2
+  user keepalived_script
+}
+
+vrrp_instance {{ deploy_keepalived_vrrp_instance }} {
+  virtual_router_id {{ deploy_keepalived_virtual_router_id }}
+  state {{ deploy_keepalived_state }}
+  priority {{ deploy_keepalived_priority }}
+  interface {{ deploy_keepalived_vrrp_interface }}
+  advert_int {{ deploy_keepalived_advert_int }}
+  virtual_ipaddress {
+    {{ deploy_keepalived_virtual_ipaddress }}
+  }
+  unicast_src_ip {{ deploy_keepalived_unicast_src_ip }}
+  unicast_peer {
+    {{ deploy_keepalived_unicast_peer }}
+  }
+  authentication {
+    auth_type PASS
+    auth_pass {{ deploy_keepalived_auth_pass }}
+  }
+  track_script {
+    check_angie_health_script
+  }
+}

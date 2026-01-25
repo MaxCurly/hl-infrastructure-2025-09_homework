@@ -1,0 +1,8 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for deploy_corosync
+
+- name: restart_corosync
+  ansible.builtin.service:
+    name: corosync
+    state: restarted

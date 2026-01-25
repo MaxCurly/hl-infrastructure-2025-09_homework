@@ -1,0 +1,10 @@
+[mysqld]
+
+server-id = {{ deploy_mysql_server_id }}
+read-only = {{ deploy_mysql_readonly }}
+log-bin = mysql-bin
+binlog_format = row
+gtid-mode = ON
+enforce-gtid-consistency = ON
+log-replica-updates = ON
+{{ deploy_mysql_relay_log }}

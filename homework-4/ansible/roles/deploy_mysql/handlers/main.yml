@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_mysql
+
+- name: restart_mysql
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_mysql_project_src }}"
+    state: restarted

@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_wordpress
+
+- name: restart_wordpress
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_wordpress_project_src }}"
+    state: restarted

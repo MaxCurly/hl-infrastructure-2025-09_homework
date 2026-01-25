@@ -1,0 +1,6 @@
+deploy_keepalived_router_id       : lb01
+deploy_keepalived_state           : MASTER
+deploy_keepalived_priority        : 101
+deploy_keepalived_unicast_src_ip  : 10.10.5.111
+deploy_keepalived_unicast_peer    : 10.10.5.112
+deploy_keepalived_vrrp_interface  : eth0
