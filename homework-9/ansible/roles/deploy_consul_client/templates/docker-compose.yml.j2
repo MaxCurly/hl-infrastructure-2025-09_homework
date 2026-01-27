@@ -1,0 +1,19 @@
+services:
+
+  consul-client:
+    image: hashicorp/consul:{{ deploy_consul_client_image_version }}
+    container_name: consul-client
+    hostname: consul-client
+    restart: always
+    volumes:
+     - {{ deploy_consul_client_project_src }}/config.json:/consul/config/config.json:ro
+     - {{ deploy_consul_client_project_src }}/web.json:/consul/config/web.json:ro
+    network_mode: host
+    ports:
+     - "8300:8300"
+     - "8301:8301/tcp"
+     - "8301:8301/udp"
+     - "8500:8500"
+     - "8600:8600/tcp"
+     - "8600:8600/udp"
+    command: "agent -config-dir=/consul/config/"

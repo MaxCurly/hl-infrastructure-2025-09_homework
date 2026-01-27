@@ -1,0 +1,16 @@
+{
+        "service": {
+            "id": "web",
+            "name": "web",
+            "tags": [ "web" ],
+            "port": 8080,
+            "enable_tag_override": false,
+            "check": {
+                "id": "web_healthcheck",
+                "name": "web_healthcheck",
+                "args": ["curl", "localhost:8080"],
+                "interval": "10s",
+                "timeout": "2s"
+            }
+        }
+    }

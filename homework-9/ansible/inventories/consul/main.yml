@@ -1,0 +1,15 @@
+all:
+  children:
+    consul:
+      hosts:
+        consul01:
+        consul02:
+        consul03:
+
+  hosts:
+    consul01:
+      ansible_host: 10.10.5.151
+    consul02:
+      ansible_host: 10.10.5.152
+    consul03:
+      ansible_host: 10.10.5.153
