@@ -1,0 +1,12 @@
+---
+# handlers file for deploy_consul_client
+
+- name: restart_consul_client
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_consul_client_project_src }}"
+    state: restarted
+
+- name: reload_consul_client
+  community.docker.docker_container_exec:
+    container: consul-client
+    command: consul reload

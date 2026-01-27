@@ -1,0 +1,14 @@
+{
+    "server": false,
+    "node_name": "{{ ansible_hostname }}",
+    "bind_addr": "{{ ansible_host }}",
+    "datacenter": "dc1",
+    "data_dir": "/etc/consul.d/data",
+    "enable_local_script_checks": true,
+    "enable_script_checks": true,
+    "retry_join":[
+        "10.10.5.151",
+        "10.10.5.152",
+        "10.10.5.153"
+     ]
+}

@@ -1,0 +1,5 @@
+---
+# vars file for deploy_consul_server
+
+deploy_consul_server_project_src   : /etc/docker/consul_server
+deploy_consul_server_image_version : 1.22.3

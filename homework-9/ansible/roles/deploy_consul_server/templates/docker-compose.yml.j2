@@ -1,0 +1,19 @@
+services:
+
+  consul-server:
+    image: hashicorp/consul:{{ deploy_consul_server_image_version }}
+    container_name: consul-server
+    hostname: consul-server
+    restart: always
+    volumes:
+     - {{ deploy_consul_server_project_src }}/data:/consul/data:rw
+     - {{ deploy_consul_server_project_src }}/config.json:/consul/config/config.json:ro
+    network_mode: host
+    ports:
+     - "8300:8300"
+     - "8301:8301/tcp"
+     - "8301:8301/udp"
+     - "8500:8500"
+     - "8600:8600/tcp"
+     - "8600:8600/udp"
+    command: "agent -bootstrap-expect=3"

@@ -1,0 +1,3 @@
+inventory_roles:
+  - deploy_docker
+  - deploy_consul_server

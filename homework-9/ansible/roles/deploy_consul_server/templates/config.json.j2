@@ -1,0 +1,29 @@
+{
+    "server": true,
+    "node_name": "{{ ansible_hostname}}",
+    "bind_addr": "{{ ansible_host }}",
+    "datacenter": "dc1",
+    "domain": "consul",
+    "enable_local_script_checks": true,
+    "ui_config": {
+        "enabled" : true
+    },
+    "data_dir": "/consul/data",
+    "addresses": {
+        "http" : "0.0.0.0"
+    },
+    "retry_join":[
+{% if ansible_hostname == "consul01" %}
+        "10.10.5.152",
+        "10.10.5.153"
+{% endif %}
+{% if ansible_hostname == "consul02" %}
+        "10.10.5.151",
+        "10.10.5.153"
+{% endif %}
+{% if ansible_hostname == "consul03" %}
+        "10.10.5.151",
+        "10.10.5.152"
+{% endif %}
+    ]
+}
