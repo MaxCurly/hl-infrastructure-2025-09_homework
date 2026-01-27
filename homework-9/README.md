@@ -61,4 +61,5 @@ ansible-playbook -i inventories/web/main.yml main.yml
 На вложенном скриншоте отражена работа consul:
 
 homework-9-1.png: состояние кластера consul
+
 homework-9-2.png: проверка работы балансировки и отработки отказа при падении одного из сервисов
