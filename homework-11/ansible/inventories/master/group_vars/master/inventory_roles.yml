@@ -1,0 +1,3 @@
+inventory_roles:
+  - deploy_etc_hosts
+  - deploy_salt_master

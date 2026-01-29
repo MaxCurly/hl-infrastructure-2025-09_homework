@@ -1,0 +1,73 @@
+---
+# tasks file for deploy_salt_master
+
+- name: download salt GPG key
+  ansible.builtin.get_url:
+    url: https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public
+    dest: /etc/apt/keyrings/salt.pgp
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: add salt repository
+  ansible.builtin.deb822_repository:
+    name: Salt Project
+    types: deb
+    uris: https://packages.broadcom.com/artifactory/saltproject-deb
+    suites: stable
+    components: main
+    signed_by: /etc/apt/keyrings/salt.pgp
+
+
+- name: install salt components
+  ansible.builtin.apt:
+    name:
+      - "salt-master={{ deploy_salt_master_salt_master_ver }}"
+      - "salt-ssh={{ deploy_salt_master_salt_ssh_ver }}"
+    state: present
+    update_cache: true
+
+- name: copy a file /etc/salt/master.d/master.conf
+  ansible.builtin.copy:
+    src: master.conf
+    dest: /etc/salt/master.d/master.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart_salt_master
+
+- name: create a directory /srv/salt
+  ansible.builtin.file:
+    path: /srv/salt
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: create a directory /srv/salt/pillar
+  ansible.builtin.file:
+    path: /srv/salt/pillar
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: copy a salt files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /srv/salt
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - top.sls
+    - nginx.sls
+    - iptables.sls
+    - nginx.conf
+  notify: restart_salt_master
+
+- name: start and enable salt-master
+  ansible.builtin.service:
+    name: salt-master
+    state: started
+    enabled: yes

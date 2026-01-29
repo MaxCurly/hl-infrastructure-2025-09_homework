@@ -1,0 +1,4 @@
+---
+# vars file for deploy_salt_minion
+
+deploy_salt_minion_salt_minion_ver : 3007.11

@@ -1,0 +1,9 @@
+all:
+  children:
+    master:
+      hosts:
+        master:
+
+  hosts:
+    master:
+      ansible_host: 10.10.5.100

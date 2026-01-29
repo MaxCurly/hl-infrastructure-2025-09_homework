@@ -1,0 +1,5 @@
+---
+# vars file for deploy_salt_master
+
+deploy_salt_master_salt_master_ver : 3007.11
+deploy_salt_master_salt_ssh_ver    : 3007.11
