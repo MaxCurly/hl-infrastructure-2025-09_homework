@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_salt_minion
+
+- name: restart_salt_minion
+  ansible.builtin.service:
+    name: salt-minion
+    state: restarted

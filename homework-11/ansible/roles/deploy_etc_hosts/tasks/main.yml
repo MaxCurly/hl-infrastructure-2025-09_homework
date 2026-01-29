@@ -1,0 +1,10 @@
+---
+# tasks file for deploy_etc_hosts
+
+- name: template a file /etc/hosts
+  ansible.builtin.template:
+    src: hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'

@@ -1,0 +1,42 @@
+---
+# tasks file for deploy_salt_minion
+
+- name: download salt GPG key
+  ansible.builtin.get_url:
+    url: https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public
+    dest: /etc/apt/keyrings/salt.pgp
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: add salt repository
+  ansible.builtin.deb822_repository:
+    name: Salt Project
+    types: deb
+    uris: https://packages.broadcom.com/artifactory/saltproject-deb
+    suites: stable
+    components: main
+    signed_by: /etc/apt/keyrings/salt.pgp
+
+
+- name: install salt components
+  ansible.builtin.apt:
+    name:
+      - "salt-minion={{ deploy_salt_minion_salt_minion_ver }}"
+    state: present
+    update_cache: true
+
+- name: copy a file /etc/salt/minion.d/minion.conf
+  ansible.builtin.copy:
+    src: minion.conf
+    dest: /etc/salt/minion.d/minion.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart_salt_minion
+
+- name: start and enable salt-minion
+  ansible.builtin.service:
+    name: salt-minion
+    state: started
+    enabled: yes

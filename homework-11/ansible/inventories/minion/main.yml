@@ -1,0 +1,11 @@
+all:
+  children:
+    minion:
+      hosts:
+        minion[01:02]:
+
+  hosts:
+    minion01:
+      ansible_host: 10.10.5.101
+    minion02:
+      ansible_host: 10.10.5.102

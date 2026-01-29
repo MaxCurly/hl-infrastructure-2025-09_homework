@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_salt_master
+
+- name: restart_salt_master
+  ansible.builtin.service:
+    name: salt-master
+    state: restarted
