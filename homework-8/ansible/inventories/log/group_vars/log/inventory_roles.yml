@@ -1,0 +1,5 @@
+inventory_roles:
+  - deploy_docker
+  - deploy_elk
+  - deploy_filebeat
+  - deploy_kafka

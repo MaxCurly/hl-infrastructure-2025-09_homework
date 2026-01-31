@@ -1,0 +1,5 @@
+deploy_docker_docker_ce_ver             : 5:28.4.0-1~ubuntu.24.04~noble
+deploy_docker_docker_ce_cli_ver         : 5:28.4.0-1~ubuntu.24.04~noble
+deploy_docker_containerd_io_ver         : 1.7.27-1
+deploy_docker_docker_buildx_plugin_ver  : 0.27.0-1~ubuntu.24.04~noble
+deploy_docker_docker_compose_plugin_ver : 2.39.2-1~ubuntu.24.04~noble

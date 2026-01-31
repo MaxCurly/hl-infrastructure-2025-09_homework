@@ -1,0 +1,7 @@
+server.name: kibana
+server.host: 0.0.0.0
+server.publicBaseUrl: "http://localhost:5601"
+monitoring.ui.container.elasticsearch.enabled: true
+elasticsearch.hosts: [ "http://10.10.5.181:9200", "http://10.10.5.182:9200", "http://10.10.5.183:9200", ]
+elasticsearch.username: test
+elasticsearch.password: test123

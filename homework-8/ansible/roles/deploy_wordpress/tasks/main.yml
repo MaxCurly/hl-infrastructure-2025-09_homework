@@ -1,0 +1,69 @@
+---
+# tasks file for deploy_wordpress
+
+- name: create a directory {{ deploy_wordpress_project_src }}
+  ansible.builtin.file:
+    path: "{{ deploy_wordpress_project_src }}"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: create a directory {{ deploy_wordpress_project_src }}/conf.d
+  ansible.builtin.file:
+    path: "{{ deploy_wordpress_project_src }}/conf.d"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: create a directory {{ deploy_wordpress_data_src }}/html
+  ansible.builtin.file:
+    path: "{{ deploy_wordpress_data_src }}/html"
+    state: directory
+    mode: '0777'
+    owner: nobody
+    group: nogroup
+
+- name: create a directory /var/log/nginx
+  ansible.builtin.file:
+    path: "/var/log/nginx"
+    state: directory
+    mode: '0777'
+    owner: root
+    group: root
+
+- name: copy a file {{ deploy_wordpress_project_src }}/nginx.conf
+  ansible.builtin.copy:
+    src: nginx.conf
+    dest: "{{ deploy_wordpress_project_src }}/nginx.conf"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_wordpress
+
+- name: copy a file {{ deploy_wordpress_project_src }}/conf.d/default.conf
+  ansible.builtin.copy:
+    src: default.conf
+    dest: "{{ deploy_wordpress_project_src }}/conf.d/default.conf"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_wordpress
+
+- name: template a file {{ deploy_wordpress_project_src }}/docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_wordpress_project_src }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_wordpress
+
+- name: create and start wordpress version={{ deploy_wordpress_image_version }} and nginx version={{ deploy_nginx_image_version }}
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_wordpress_project_src }}"
+    state: present

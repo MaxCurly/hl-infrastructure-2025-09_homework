@@ -1,0 +1,97 @@
+---
+# tasks file for deploy_nginx_reverse_proxy
+
+- name: create a directory {{ deploy_nginx_project_src }}
+  ansible.builtin.file:
+    path: "{{ deploy_nginx_project_src }}"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: create a directory {{ deploy_nginx_project_src }}/conf.d
+  ansible.builtin.file:
+    path: "{{ deploy_nginx_project_src }}/conf.d"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: create a directory {{ deploy_nginx_project_src }}/ssl
+  ansible.builtin.file:
+    path: "{{ deploy_nginx_project_src }}/ssl"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: create a directory {{ deploy_nginx_project_src }}/html
+  ansible.builtin.file:
+    path: "{{ deploy_nginx_project_src }}/html"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: create a directory /var/log/nginx
+  ansible.builtin.file:
+    path: "/var/log/nginx"
+    state: directory
+    mode: '0777'
+    owner: root
+    group: root
+
+- name: copy a file {{ deploy_nginx_project_src }}/nginx.conf
+  ansible.builtin.copy:
+    src: nginx.conf
+    dest: "{{ deploy_nginx_project_src }}/nginx.conf"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_nginx
+
+- name: copy a file {{ deploy_nginx_project_src }}/conf.d/default.conf
+  ansible.builtin.copy:
+    src: default.conf
+    dest: "{{ deploy_nginx_project_src }}/conf.d/default.conf"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_nginx
+
+- name: copy a file {{ deploy_nginx_project_src }}/ssl/project.local_ssl_cert.pem
+  ansible.builtin.copy:
+    src: project.local_ssl_cert.pem
+    dest: "{{ deploy_nginx_project_src }}/ssl/project.local_ssl_cert.pem"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_nginx
+
+- name: copy a file {{ deploy_nginx_project_src }}/ssl/project.local_ssl_key.pem
+  ansible.builtin.copy:
+    src: project.local_ssl_key.pem
+    dest: "{{ deploy_nginx_project_src }}/ssl/project.local_ssl_key.pem"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_nginx
+
+- name: template a file {{ deploy_nginx_project_src }}/docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_nginx_project_src }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_nginx
+
+- name: create and start nginx version={{ deploy_nginx_image_version }}
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_nginx_project_src }}"
+    state: present

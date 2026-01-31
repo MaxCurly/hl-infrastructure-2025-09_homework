@@ -1,0 +1,4 @@
+---
+# vars file for deploy_corosync
+
+deploy_corosync_corosync_ver : 3.1.7-1ubuntu3.1

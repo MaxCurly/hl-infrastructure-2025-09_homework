@@ -1,0 +1,35 @@
+---
+# tasks file for deploy_filebeat
+
+- name: create a directory {{ deploy_filebeat_project_src }}
+  ansible.builtin.file:
+    path: "{{ deploy_filebeat_project_src }}"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: copy a file {{ deploy_filebeat_project_src }}/filebeat.yml
+  ansible.builtin.copy:
+    src: filebeat.yml
+    dest: "{{ deploy_filebeat_project_src }}/filebeat.yml"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_filebeat
+
+- name: template a file {{ deploy_filebeat_project_src }}/docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_filebeat_project_src }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: restart_filebeat
+
+- name: Create and start filebeat version={{ deploy_filebeat_image_version }}
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_filebeat_project_src }}"
+    state: present

@@ -1,0 +1,17 @@
+---
+# vars file for deploy_wordpress
+
+deploy_wordpress_data_src            : /mnt/gfs2
+deploy_wordpress_project_src         : /etc/docker/wordpress
+deploy_wordpress_nginx_image_version : 1.27.2
+deploy_wordpress_image_version       : 6.6.2-php8.2-fpm-alpine
+deploy_wordpress_db_host             : 10.10.5.121
+deploy_wordpress_db_name             : wordpress
+deploy_wordpress_db_user             : wordpress
+deploy_wordpress_db_password         : !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          38616334313035663432353636303962393635636262323638326665356565623631613066383534
+          6234663436343035316536383739343332323032303166380a373039643839323436376130633439
+          61616161346561373966333434646135393734303961616437646565393764306430616564353962
+          3630303833663937330a353630346331616534353866353036623337393866323562613739353937
+          6638

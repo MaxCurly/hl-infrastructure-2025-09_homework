@@ -1,0 +1,98 @@
+#!/bin/bash
+
+### Author: Maxim Kudryashov (m.v.kudryashov@ya.ru) ###
+### Modified for WordPress single database backup ###
+
+# Configuration
+DB_NAME="wordpress"
+MYSQL_CMD="sudo docker exec mysql mysql --password={{ deploy_mysql_root_pass }} --skip-column-names"
+BACKUP_DIR="{{ deploy_mysql_data_src }}/mysql-backup"
+LOG_FILE="{{ deploy_mysql_data_src }}/mysql-backup-$(date +%Y-%m-%d_%H-%M-%S).log"
+DATE_SUFFIX=$(date +%Y-%m-%d_%H-%M-%S)
+
+# Create log file
+touch "$LOG_FILE"
+echo "Backup log file created: $LOG_FILE" | tee -a "$LOG_FILE"
+
+# Check and stop replication if running
+mysql_replica_status=$(sudo docker exec mysql mysql --password={{ deploy_mysql_root_pass }} -e "SHOW REPLICA STATUS\G" | grep Replica_SQL_Running: | awk '{print $2}')
+
+if [ "$mysql_replica_status" == "Yes" ]; then
+    echo "Replication is running, attempting to stop it..." | tee -a "$LOG_FILE"
+    sudo docker exec mysql mysql --password={{ deploy_mysql_root_pass }} -e "STOP REPLICA"
+    sleep 5
+    
+    if [ $(sudo docker exec mysql mysql --password={{ deploy_mysql_root_pass }} -e "SHOW REPLICA STATUS\G" | grep Replica_SQL_Running: | awk '{print $2}') == "Yes" ]; then
+        echo "Error: Could not stop replication" | tee -a "$LOG_FILE"
+        exit 1
+    else
+        echo "Replication stopped successfully" | tee -a "$LOG_FILE"
+    fi
+else
+    echo "Replication already stopped, proceeding with backup" | tee -a "$LOG_FILE"
+fi
+
+# Create backup directory
+mkdir -p "$BACKUP_DIR" 2>> "$LOG_FILE"
+echo "Backup directory created: $BACKUP_DIR" | tee -a "$LOG_FILE"
+
+# Get GTID executed set for the replica
+GTID_EXECUTED=$($MYSQL_CMD -e "SELECT @@GLOBAL.GTID_EXECUTED")
+echo "Current GTID_EXECUTED: $GTID_EXECUTED" | tee -a "$LOG_FILE"
+
+# Create WordPress database backup with GTID information
+echo "Starting WordPress database backup..." | tee -a "$LOG_FILE"
+sudo docker exec mysql mysqldump \
+    --password={{ deploy_mysql_root_pass }} \
+    --single-transaction \
+    --master-data=2 \
+    --set-gtid-purged=ON \
+    --add-drop-database \
+    --add-drop-table \
+    --add-locks \
+    --create-options \
+    --disable-keys \
+    --extended-insert \
+    --quick \
+    --set-charset \
+    --events \
+    --routines \
+    --triggers \
+    --databases "$DB_NAME" > "$BACKUP_DIR/$DB_NAME-$DATE_SUFFIX.sql" 2>> "$LOG_FILE"
+
+cp "$BACKUP_DIR/$DB_NAME-$DATE_SUFFIX.sql" /mnt/nfs/mysql/mysql-backup_last-version.sql
+
+if [ $? -eq 0 ]; then
+    echo "WordPress database backup completed successfully" | tee -a "$LOG_FILE"
+else
+    echo "Error during WordPress database backup" | tee -a "$LOG_FILE"
+    exit 1
+fi
+
+# Create archive
+echo "Creating backup archive..." | tee -a "$LOG_FILE"
+tar -zcvf "$BACKUP_DIR-$DATE_SUFFIX.tar.gz" "$BACKUP_DIR" 2>> "$LOG_FILE"
+
+if [ $? -eq 0 ]; then
+    echo "Archive created: $BACKUP_DIR-$DATE_SUFFIX.tar.gz" | tee -a "$LOG_FILE"
+else
+    echo "Error creating archive" | tee -a "$LOG_FILE"
+    exit 1
+fi
+
+# Cleanup
+rm -rf "$BACKUP_DIR" 2>> "$LOG_FILE"
+echo "Temporary directory removed" | tee -a "$LOG_FILE"
+
+# Restart replication
+echo "Attempting to restart replication..." | tee -a "$LOG_FILE"
+sudo docker exec mysql mysql --password={{ deploy_mysql_root_pass }} -e "START REPLICA"
+sleep 5
+
+if [ $(sudo docker exec mysql mysql --password={{ deploy_mysql_root_pass }} -e "SHOW REPLICA STATUS\G" | grep Replica_SQL_Running: | awk '{print $2}') == "Yes" ]; then
+    echo "Replication started successfully" | tee -a "$LOG_FILE"
+    exit 0
+else
+    echo "Warning: Could not restart replication automatically" | tee -a "$LOG_FILE"
+    exit 1
+fi

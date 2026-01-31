@@ -1,0 +1,29 @@
+services:
+ 
+  nginx:
+    image: nginx:{{ deploy_wordpress_nginx_image_version }}
+    container_name: nginx
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - {{ deploy_wordpress_project_src }}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - {{ deploy_wordpress_project_src }}/conf.d/:/etc/nginx/conf.d:ro
+      - {{ deploy_wordpress_data_src }}/html/:/var/www/html:ro
+      - /var/log/nginx:/var/log/nginx:rw
+    environment:
+      TZ: "Europe/Moscow"
+
+  wordpress:
+    image: wordpress:{{ deploy_wordpress_image_version }}
+    container_name: wordpress
+    restart: always
+    ports:
+      - 9000:9000
+    volumes:
+      - {{ deploy_wordpress_data_src }}/html:/var/www/html:rw
+    environment:
+      WORDPRESS_DB_HOST: {{ deploy_wordpress_db_host }}
+      WORDPRESS_DB_NAME: {{ deploy_wordpress_db_name }}
+      WORDPRESS_DB_USER: {{ deploy_wordpress_db_user }}
+      WORDPRESS_DB_PASSWORD: {{ deploy_wordpress_db_password }}

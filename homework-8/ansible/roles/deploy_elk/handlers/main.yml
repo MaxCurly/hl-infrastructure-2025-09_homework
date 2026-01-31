@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_elk
+
+- name: restart_elk
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_elk_project_src }}"
+    state: restarted
