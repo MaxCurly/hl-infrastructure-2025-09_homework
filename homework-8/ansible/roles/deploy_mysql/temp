@@ -1,0 +1,18 @@
+На мастере (10.10.5.105):
+
+sudo  mysqldump -h 10.10.5.105 -p  --single-transaction   --master-data=2   --set-gtid-purged=ON   --all-databases > /mnt/nfs/mysql/full_dump.sql
+
+На реплике (10.10.5.106):
+
+STOP SLAVE;
+RESET SLAVE ALL;
+RESET MASTER;
+
+sudo mysql -h 10.10.5.106 -p < /mnt/nfs/mysql/full_dump.sql
+
+CHANGE MASTER TO
+  MASTER_HOST='10.10.5.105',
+  MASTER_USER='replica',
+  MASTER_PASSWORD='replica',
+  MASTER_AUTO_POSITION=1;
+START SLAVE;

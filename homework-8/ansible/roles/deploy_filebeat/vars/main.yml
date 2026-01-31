@@ -1,0 +1,5 @@
+---
+# vars file for deploy_filebeat
+
+deploy_filebeat_project_src   : /etc/docker/filebeat
+deploy_filebeat_image_version : 8.9.1

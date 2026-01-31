@@ -1,0 +1,5 @@
+inventory_roles:
+  - deploy_docker
+  - deploy_filebeat
+  - deploy_pip
+  - deploy_mysql

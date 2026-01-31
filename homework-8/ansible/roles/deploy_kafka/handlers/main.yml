@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_kafka
+
+- name: restart_kafka
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_kafka_project_src }}"
+    state: restarted

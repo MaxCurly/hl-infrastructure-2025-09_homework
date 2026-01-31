@@ -1,0 +1,4 @@
+---
+# vars file for deploy_gfs2
+
+deploy_gfs2_gfs2_utils_ver   : 3.5.1-1

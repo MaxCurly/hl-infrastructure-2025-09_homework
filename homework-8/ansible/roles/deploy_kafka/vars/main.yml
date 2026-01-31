@@ -1,0 +1,6 @@
+---
+# vars file for deploy_kafka
+
+deploy_kafka_data_src            : /etc/docker/kafka/data
+deploy_kafka_project_src         : /etc/docker/kafka
+deploy_kafka_kafka_image_version : 4.4.1

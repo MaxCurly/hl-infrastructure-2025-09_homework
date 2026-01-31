@@ -1,0 +1,9 @@
+deploy_keepalived_ver               : 1:2.2.8-1build2
+deploy_keepalived_virtual_ipaddress : 10.10.5.110/24
+deploy_keepalived_advert_int        : 1
+deploy_keepalived_virtual_router_id : 2
+deploy_keepalived_vrrp_instance     : vrrp_instance_1
+deploy_keepalived_auth_pass         : 12345678
+deploy_keepalived_vrrp_interface    : eth0
+deploy_keepalived_script_name       : check_angie_health_script
+deploy_keepalived_script_path       : /etc/keepalived/check_angie_health_script

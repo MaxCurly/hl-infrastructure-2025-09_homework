@@ -1,0 +1,5 @@
+inventory_roles:
+  - deploy_docker
+  - deploy_filebeat
+  - deploy_keepalived
+  - deploy_nginx_reverse_proxy

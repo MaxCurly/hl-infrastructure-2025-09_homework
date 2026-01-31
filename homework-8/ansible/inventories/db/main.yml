@@ -1,0 +1,11 @@
+all:
+  children:
+    db:
+      hosts:
+        db[01:02]:
+
+  hosts:
+    db01:
+      ansible_host: 10.10.5.121
+    db02:
+      ansible_host: 10.10.5.122

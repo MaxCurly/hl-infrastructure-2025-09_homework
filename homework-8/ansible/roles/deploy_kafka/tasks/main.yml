@@ -1,0 +1,34 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for deploy_kafka
+
+- name: create a directory {{ deploy_kafka_project_src }}
+  ansible.builtin.file:
+    path: "{{ deploy_kafka_project_src }}"
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: create a directory {{ deploy_kafka_data_src }}/data
+  ansible.builtin.file:
+    path: "{{ deploy_kafka_data_src }}/data"
+    state: directory
+    mode: '0777'
+    owner: root
+    group: root
+
+- name: template a file {{ deploy_kafka_project_src }}/docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_kafka_project_src }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart_kafka
+
+- name: create and start kafka version={{ deploy_kafka_kafka_image_version }}
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_kafka_project_src }}"
+    state: present
