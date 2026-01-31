@@ -1,0 +1,4 @@
+deploy_mysql_server_id : 2
+deploy_mysql_readonly  : ON
+deploy_mysql_role      : slave
+deploy_mysql_relay_log : relay-log=relay-log-server

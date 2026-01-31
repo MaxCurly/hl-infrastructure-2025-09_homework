@@ -1,0 +1,4 @@
+---
+# vars file for deploy_iscsi_client
+
+deploy_iscsi_client_open_iscsi_ver : 2.1.9-3ubuntu5.4

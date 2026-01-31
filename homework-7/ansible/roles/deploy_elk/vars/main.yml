@@ -1,0 +1,8 @@
+---
+# vars file for deploy_elk
+
+deploy_elk_data_src                    : /etc/docker/elk/data
+deploy_elk_project_src                 : /etc/docker/elk
+deploy_elk_elasticsearch_image_version : 8.9.1
+deploy_elk_logstash_image_version      : 8.9.1
+deploy_elk_kibana_image_version        : 8.9.1

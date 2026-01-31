@@ -1,0 +1,18 @@
+---
+# tasks file for deploy_iscsi_target
+
+- name: install targetcli-fb
+  ansible.builtin.apt:
+    name:
+      - "targetcli-fb={{ deploy_iscsi_target_targetcli_fb_ver }}"
+    state: present
+    update_cache: true
+
+- name: create iSCSI target with shell
+  shell: |
+    targetcli /backstores/block create disk1 /dev/sdb
+    targetcli /iscsi create iqn.2026-01.ru.otus:target01
+    targetcli /iscsi/iqn.2026-01.ru.otus:target01/tpg1/luns create /backstores/block/disk1 lun=1
+    targetcli /iscsi/iqn.2026-01.ru.otus:target01/tpg1 set attribute generate_node_acls=1
+    targetcli /iscsi/iqn.2026-01.ru.otus:target01/tpg1 set attribute authentication=0
+    targetcli /iscsi/iqn.2026-01.ru.otus:target01/tpg1 set attribute demo_mode_write_protect=0

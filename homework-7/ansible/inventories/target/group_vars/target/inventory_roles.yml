@@ -1,0 +1,4 @@
+inventory_roles:
+  - deploy_docker
+  - deploy_filebeat
+  - deploy_iscsi_target

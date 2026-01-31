@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_nginx_reverse_proxy
+
+- name: restart_nginx
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_nginx_project_src }}"
+    state: restarted

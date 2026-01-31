@@ -1,0 +1,14 @@
+filebeat.inputs:
+- type: filestream
+  id: my-filestream-id
+  enabled: true
+  paths:
+    - /var/log/*.log
+    - /var/log/nginx/*.log
+    - /var/lib/docker/containers/*/*.log
+  exclude_files: ['.gz$']
+  prospector.scanner.exclude_files: ['.gz$']
+
+output.logstash:
+  enabled: true
+  hosts: ["10.10.5.181:5044", "10.10.5.182:5044", "10.10.5.183:5044",]

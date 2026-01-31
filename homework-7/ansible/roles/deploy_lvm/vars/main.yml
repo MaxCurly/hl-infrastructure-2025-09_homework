@@ -1,0 +1,6 @@
+---
+# vars file for deploy_lvm
+
+deploy_lvm_lvm2_ver         : 2.03.16-3ubuntu3.2
+deploy_lvm_lvm2_lockd_ver   : 2.03.16-3ubuntu3.2
+deploy_lvm_dlm_controld_ver : 4.2.0-3build1

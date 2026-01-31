@@ -1,0 +1,7 @@
+---
+# handlers file for deploy_keepalived
+
+- name: restart_keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: restarted
