@@ -1,0 +1,27 @@
+---
+# tasks file for deploy_corosync
+
+- name: install corosync
+  ansible.builtin.apt:
+    name:
+      - "corosync={{ deploy_corosync_corosync_ver }}"
+    state: present
+    update_cache: true
+
+- name: template a file corosync.conf
+  ansible.builtin.template:
+    src: corosync.conf.j2
+    dest: /etc/corosync/corosync.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart_corosync
+
+- name: start and enable corosync
+  ansible.builtin.service:
+    name: corosync
+    state: started
+    enabled: yes
+
+- name: force handlers to run now
+  ansible.builtin.meta: flush_handlers

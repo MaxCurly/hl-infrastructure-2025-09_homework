@@ -1,0 +1,9 @@
+all:
+  children:
+    target:
+      hosts:
+        target01:
+
+  hosts:
+    target01:
+      ansible_host: 10.10.5.100

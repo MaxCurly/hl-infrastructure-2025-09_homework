@@ -1,0 +1,4 @@
+deploy_mysql_server_id : 1
+deploy_mysql_readonly  : OFF
+deploy_mysql_role      : master
+deploy_mysql_relay_log : '#'

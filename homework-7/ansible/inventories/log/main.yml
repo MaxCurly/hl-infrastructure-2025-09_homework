@@ -1,0 +1,13 @@
+all:
+  children:
+    log:
+      hosts:
+        log[01:03]:
+
+  hosts:
+    log01:
+      ansible_host: 10.10.5.181
+    log02:
+      ansible_host: 10.10.5.182
+    log03:
+      ansible_host: 10.10.5.183

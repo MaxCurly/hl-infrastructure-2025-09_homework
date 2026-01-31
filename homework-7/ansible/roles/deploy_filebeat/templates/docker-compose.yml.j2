@@ -1,0 +1,12 @@
+services:
+ 
+  filebeat:
+    image: elastic/filebeat:{{ deploy_filebeat_image_version }}
+    container_name: filebeat
+    restart: always
+    user: root
+    volumes:
+      - {{ deploy_filebeat_project_src }}/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: filebeat -e -strict.perms=false
