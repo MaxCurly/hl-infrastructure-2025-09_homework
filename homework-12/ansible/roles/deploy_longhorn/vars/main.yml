@@ -1,0 +1,5 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for deploy_longhorn
+
+deploy_longhorn_longhorn_version : 1.10.2

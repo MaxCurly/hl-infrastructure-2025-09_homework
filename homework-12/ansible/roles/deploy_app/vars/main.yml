@@ -1,0 +1,6 @@
+---
+# vars file for deploy_app
+
+deploy_app_wordpress_ver : 6.2.1-apache
+deploy_app_mysql_ver     : 9.6.0
+deploy_app_project_src   : /root/deployment

@@ -1,0 +1,24 @@
+---
+# tasks file for deploy_helm
+
+- name: download helm binary
+  ansible.builtin.get_url:
+    url: https://get.helm.sh/helm-{{ deploy_helm_helm_version }}.tar.gz
+    dest: /tmp/helm-{{ deploy_helm_helm_version }}.tar.gz
+    checksum: sha256:{{ deploy_helm_download_md5_checksum }}
+
+- name: unarchive /tmp/helm-{{ deploy_helm_helm_version }}.tar.gz
+  ansible.builtin.unarchive:
+    src: /tmp/helm-{{ deploy_helm_helm_version }}.tar.gz
+    dest: /tmp/
+    remote_src: yes
+
+- name: copy a file /tmp/linux-amd64/helm to /usr/local/bin/helm
+  ansible.builtin.copy:
+    src: /tmp/linux-amd64/helm
+    dest: /usr/local/bin/helm
+    owner: root
+    group: root
+    mode: '0755'
+    backup: false
+    remote_src: yes
