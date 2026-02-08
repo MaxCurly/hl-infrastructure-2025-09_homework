@@ -1,0 +1,9 @@
+---
+# handlers file for deploy_app
+
+- name: restart_app
+  ansible.builtin.shell: kubectl apply -f {{ deploy_app_project_src }}/deployment.yml
+  when: 
+    - "'k3s-master' in group_names"
+    - deploy_k3s_bootstrap_master == true
+    

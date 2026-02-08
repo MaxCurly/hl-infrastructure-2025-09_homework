@@ -1,0 +1,22 @@
+all:
+  children:
+    k3s-master:
+      hosts:
+        k3s-master[01:03]:
+    k3s-worker:
+      hosts:
+        k3s-worker[01:03]:
+
+  hosts:
+    k3s-master01:
+      ansible_host: 10.10.5.191
+    k3s-master02:
+      ansible_host: 10.10.5.192
+    k3s-master03:
+      ansible_host: 10.10.5.193
+    k3s-worker01:
+      ansible_host: 10.10.5.194
+    k3s-worker02:
+      ansible_host: 10.10.5.195
+    k3s-worker03:
+      ansible_host: 10.10.5.196

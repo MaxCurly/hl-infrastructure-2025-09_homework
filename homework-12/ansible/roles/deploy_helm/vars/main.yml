@@ -1,0 +1,5 @@
+---
+# vars file for deploy_helm
+
+deploy_helm_helm_version          : v4.1.0-linux-amd64
+deploy_helm_download_md5_checksum : 8e7ae5cb890c56f53713bffec38e41cd8e7e4619ebe56f8b31cd383bfb3dbb83

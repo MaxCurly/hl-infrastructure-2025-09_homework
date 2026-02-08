@@ -1,0 +1,125 @@
+---
+# tasks file for deploy_k3s
+
+- name: load "dm_crypt" module
+  ansible.builtin.modprobe:
+    name: dm_crypt
+    state: present
+  when: 
+    - "'k3s-worker' in group_names"
+
+- name: make module "dm_crypt" load at boot
+  ansible.builtin.lineinfile:
+    path: /etc/modules-load.d/longhorn.conf
+    line: "dm_crypt"
+    create: yes
+    state: present
+  when: 
+    - "'k3s-worker' in group_names"
+
+- name: install open-iscsi and nfs-common
+  ansible.builtin.apt:
+    name:
+      - "open-iscsi={{ deploy_longhorn_open_iscsi_ver }}"
+      - "nfs-common={{ deploy_longhorn_nfs_common_ver }}"
+    state: present
+    update_cache: true
+  when: 
+    - "'k3s-worker' in group_names"
+
+- name: start and enable open-iscsi
+  ansible.builtin.service:
+    name: open-iscsi
+    state: started
+    enabled: yes
+  when: 
+    - "'k3s-worker' in group_names"
+
+- name: stop and disable multipathd
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - multipathd.socket
+    - multipathd.service
+  when: 
+    - "'k3s-worker' in group_names"
+
+- name: copy a file /tmp/k3s_install_script
+  ansible.builtin.copy:
+    src: k3s_install_script
+    dest: /tmp/k3s_install_script
+    owner: root
+    group: root
+    mode: '0744'
+    backup: false
+
+- name: run k3s_install_script on bootstrap masters node
+  ansible.builtin.shell: |
+      INSTALL_K3S_VERSION={{ deploy_k3s_k3s_version }} \
+      K3S_TOKEN={{ deploy_k3s_cluster_token }} \
+      /tmp/k3s_install_script server \
+      --cluster-init \
+      --node-taint node-role.kubernetes.io/master=:NoSchedule \
+      --flannel-backend {{ deploy_k3s_flannel_backend }} \
+      --cluster-cidr {{ deploy_k3s_cluster_cidr }} \
+      --service-cidr {{ deploy_k3s_service_cidr }} \
+      --cluster-dns {{ deploy_k3s_cluster_dns }} \
+      --tls-san {{ deploy_k3s_tls_san }} \
+      --cluster-domain {{ deploy_k3s_cluster_domain }}
+  args:
+    creates: /usr/local/bin/k3s
+  when: 
+    - "'k3s-master' in group_names"
+    - deploy_k3s_bootstrap_master == true
+
+- name: run k3s_install_script on follower master nodes
+  ansible.builtin.shell: |
+      INSTALL_K3S_VERSION={{ deploy_k3s_k3s_version }} \
+      K3S_TOKEN={{ deploy_k3s_cluster_token }} \
+      /tmp/k3s_install_script server \
+      --server https://{{ deploy_k3s_bootstrap_master_ip }}:6443 \
+      --node-taint node-role.kubernetes.io/master=:NoSchedule \
+      --flannel-backend {{ deploy_k3s_flannel_backend }} \
+      --cluster-cidr {{ deploy_k3s_cluster_cidr }} \
+      --service-cidr {{ deploy_k3s_service_cidr }} \
+      --cluster-dns {{ deploy_k3s_cluster_dns }} \
+      --tls-san {{ deploy_k3s_tls_san }} \
+      --cluster-domain {{ deploy_k3s_cluster_domain }}
+  args:
+    creates: /usr/local/bin/k3s
+  when: 
+    - "'k3s-master' in group_names"
+    - deploy_k3s_bootstrap_master == false
+
+- name: run k3s_install_script on worker nodes
+  ansible.builtin.shell: |
+      INSTALL_K3S_VERSION={{ deploy_k3s_k3s_version }} \
+      K3S_TOKEN={{ deploy_k3s_cluster_token }} \
+      /tmp/k3s_install_script agent \
+      --server https://{{ deploy_k3s_bootstrap_master_ip }}:6443 \
+  args:
+    creates: /usr/local/bin/k3s
+  when: 
+    - "'k3s-worker' in group_names"
+
+- name: create a directory /root/.kube/config
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    mode: '0750'
+  when: 
+    - "'k3s-master' in group_names"
+
+- name: copy a file /etc/rancher/k3s/k3s.yaml to /root/.kube/config
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: /root/.kube/config
+    owner: root
+    group: root
+    mode: '0644'
+    backup: false
+    remote_src: yes
+  when: 
+    - "'k3s-master' in group_names"

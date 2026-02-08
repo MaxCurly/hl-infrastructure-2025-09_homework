@@ -1,0 +1,44 @@
+---
+# tasks file for deploy_longhorn
+
+- name: add longhorn helm repo
+  ansible.builtin.shell: helm repo add longhorn https://charts.longhorn.io
+  when: 
+    - "'k3s-master' in group_names"
+    - deploy_k3s_bootstrap_master == true
+
+- name: update helm repo
+  ansible.builtin.shell: helm repo update
+  when: 
+    - "'k3s-master' in group_names"
+    - deploy_k3s_bootstrap_master == true
+
+- name: check if longhorn helm release exists
+  ansible.builtin.shell: |
+    helm list -n longhorn-system --output json | jq -e '.[] | select(.name=="longhorn")'
+  register: helm_check
+  failed_when: false
+  changed_when: false
+  when:
+    - "'k3s-master' in group_names"
+    - deploy_k3s_bootstrap_master == true
+
+- name: run k3s_install_script on bootstrap masters node
+  ansible.builtin.shell: |
+    helm install longhorn longhorn/longhorn \
+    --namespace longhorn-system \
+    --create-namespace \
+    --version {{ deploy_longhorn_longhorn_version }} \
+    --set defaultSettings.defaultDataPath="/var/lib/longhorn/" \
+    --set defaultSettings.v1DataEngine=true \
+    --set longhornUI.replicas=3 \
+    --set service.ui.type=ClusterIP \
+    --set ingress.enabled=true \
+    --set ingress.host="longhorn.k3s.local" \
+    --set ingress.ingressClassName="traefik" \
+    --set ingress.annotations."kubernetes.io/ingress.class"="traefik" \
+    --set ingress.annotations."traefik.ingress.kubernetes.io/router.entrypoints"="web" \
+  when: 
+    - "'k3s-master' in group_names"
+    - deploy_k3s_bootstrap_master == true
+    - helm_check.rc != 0
