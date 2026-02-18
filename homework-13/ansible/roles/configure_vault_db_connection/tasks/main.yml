@@ -1,0 +1,25 @@
+---
+# tasks file for configure_vault_db_connection
+
+- name: enable database sercet engine
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- vault secrets enable database
+  ignore_errors: yes
+
+- name: add mysql connector
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- vault write database/config/mysql \
+     plugin_name=mysql-database-plugin \
+     connection_url="root:12345678@tcp(mysql.default.svc.k3s.local:3306)/" \
+     allowed_roles="mysql-role" \
+     username="root" \
+     password="12345678"
+
+- name: add role
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- vault write database/roles/mysql-role \
+    db_name=mysql \
+    creation_statements="CREATE USER '{{ '{{name}}' }}'@'%' IDENTIFIED BY '{{ '{{password}}' }}'; GRANT ALL PRIVILEGES ON wordpress.* TO '{{ '{{name}}' }}'@'%';" \
+    revocation_statements="DROP USER IF EXISTS '{{ '{{name}}' }}'@'%';" \
+    default_ttl="2m" \
+    max_ttl="2m"

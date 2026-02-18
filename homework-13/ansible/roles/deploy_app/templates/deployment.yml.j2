@@ -1,0 +1,305 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: myapp-sa
+  namespace: default
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-wordpress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: wordpress.k3s.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wordpress
+            port:
+              number: 80
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      serviceAccountName: myapp-sa
+      containers:
+      - image: mysql:9.6.0
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: MYSQL_DATABASE
+          value: wordpress
+#        - name: MYSQL_USER
+#          value: wordpress
+#        - name: MYSQL_PASSWORD
+#          valueFrom:
+#            secretKeyRef:
+#              name: mysql-pass
+#              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: pvc-mysql
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-pass
+type: Opaque
+data:
+  password: MTIzNDU2Nzg=
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  type: ClusterIP
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-mysql
+  labels:
+    app: mysql
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+      annotations:
+        vault.hashicorp.com/template-static-secret-render-interval: "5s"
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "myapp-role"
+        vault.hashicorp.com/namespace: ""
+        vault.hashicorp.com/agent-inject-secret-db.txt: "database/creds/mysql-role"
+        vault.hashicorp.com/agent-inject-template-db.txt: |
+          {{- with secret "database/creds/mysql-role" -}}
+          export DB_USERNAME="{{ .Data.username }}"
+          export DB_PASSWORD="{{ .Data.password }}"
+          {{- end }}
+    spec:
+      serviceAccountName: myapp-sa
+      initContainers:
+      - name: vault-wp-config
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /var/www/html
+          if [ ! -f /var/www/html/wp-config.php ] || ! cmp -s /config/wp-config.php /var/www/html/wp-config.php; then
+            echo "Installing Vault-aware wp-config.php..."
+            cp /config/wp-config.php /var/www/html/wp-config.php
+            chmod 644 /var/www/html/wp-config.php
+          else
+            echo "wp-config.php already up to date"
+          fi
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+        - name: wp-config-volume
+          mountPath: /config
+      containers:
+      - image: wordpress:6.2.1-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql
+#        - name: WORDPRESS_DB_PASSWORD
+#          valueFrom:
+#            secretKeyRef:
+#              name: mysql-pass
+#              key: password
+#        - name: WORDPRESS_DB_USER
+#          value: wordpress
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: pvc-wordpress
+      - name: wp-config-volume
+        configMap:
+          name: wp-config-vault
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wp-config-vault
+data:
+  wp-config.php: |
+    <?php
+    $vault_secrets_file = '/vault/secrets/db.txt';
+    if (file_exists($vault_secrets_file)) {
+        $file_content = file_get_contents($vault_secrets_file);
+        if ($file_content) {
+            // Ищем строку с DB_USERNAME
+            if (preg_match('/DB_USERNAME="(.+)"/', $file_content, $matches)) {
+                define('DB_USER', $matches[1]);
+            }
+            // Ищем строку с DB_PASSWORD
+            if (preg_match('/DB_PASSWORD="(.+)"/', $file_content, $matches)) {
+                define('DB_PASSWORD', $matches[1]);
+            }
+        }
+    }
+
+    // Если по какой-то причине мы не смогли определить пользователя/пароль,
+    // используем значения по умолчанию (чтобы сайт не упал совсем).
+    if (!defined('DB_USER')) {
+        define('DB_USER', 'wordpress'); // Запасной вариант
+    }
+    if (!defined('DB_PASSWORD')) {
+        define('DB_PASSWORD', 'password'); // Запасной вариант
+    }
+    // ** Database settings - остальные настройки ** //
+    /** The name of the database for WordPress */
+    define( 'DB_NAME', 'wordpress' );
+
+    /** Database hostname */
+    define( 'DB_HOST', 'mysql' );
+
+    /** Database charset to use in creating database tables. */
+    define( 'DB_CHARSET', 'utf8' );
+
+    /** The database collate type. Don't change this if in doubt. */
+    define( 'DB_COLLATE', '' );
+
+    /**#@+
+     * Authentication unique keys and salts.
+     *
+     * Change these to different unique phrases! You can generate these using
+     * the {@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service}.
+     */
+    define( 'AUTH_KEY',         '9d92b372e10c8f6816de8c48a6246734d473c257' );
+    define( 'SECURE_AUTH_KEY',  '7f13063d89d1506a3eb42a79b014c4eab7c3a0e9' );
+    define( 'LOGGED_IN_KEY',    '675886d05a8e2e4f06527249bd1dd8263e5f75af' );
+    define( 'NONCE_KEY',        '1d83dd970d658efad9dee60c056938427b67b4c8' );
+    define( 'AUTH_SALT',        'cab80132284cf0bad0fc8a8a3fb6b7f2c8018b6d' );
+    define( 'SECURE_AUTH_SALT', 'efd3887396b0200be2b260c90e4fdcce4db9c92d' );
+    define( 'LOGGED_IN_SALT',   'cdd7aa8ccb98f73bebb240bb58bd8b753cb59fe0' );
+    define( 'NONCE_SALT',       '6d592e4d2b0e82881ff270c59b263b263acdfebf' );
+
+    /**#@-*/
+
+    /**
+     * WordPress database table prefix.
+     */
+    $table_prefix = 'wp_';
+
+    /**
+     * For developers: WordPress debugging mode.
+     */
+    define( 'WP_DEBUG', false );
+
+    /* Add any custom values between this line and the "stop editing" line. */
+
+    // If we're behind a proxy server and using HTTPS, we need to alert WordPress of that fact
+    if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
+        $_SERVER['HTTPS'] = 'on';
+    }
+
+    /* That's all, stop editing! Happy publishing. */
+
+    /** Absolute path to the WordPress directory. */
+    if ( ! defined( 'ABSPATH' ) ) {
+        define( 'ABSPATH', __DIR__ . '/' );
+    }
+
+    /** Sets up WordPress vars and included files. */
+    require_once ABSPATH . 'wp-settings.php';
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: wordpress
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name:  pvc-wordpress
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
