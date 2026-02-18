@@ -1,0 +1,9 @@
+---
+# vars file for deploy_vault
+
+deploy_vault_vault_helm_chart_ver : v0.32.0
+deploy_vault_vault_ver            : 1.21.2
+deploy_vault_injector_ver         : 1.7.2
+deploy_vault_project_src          : /opt/helm/vault
+deploy_vault_unseal_token         : k62+bQxp8WtPZe1jLuE0GcvMli/PdukE5Ckmla7QF7A=
+deploy_vault_root_token           : hvs.bamJ8arDYNIUJ0EU8GVVLblQ

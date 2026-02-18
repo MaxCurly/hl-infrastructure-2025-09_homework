@@ -1,0 +1,6 @@
+---
+# handlers file for deploy_vault
+
+- name: restart_vault
+  ansible.builtin.shell: kubectl apply -f {{ deploy_app_project_src }}/vault.yml
+    

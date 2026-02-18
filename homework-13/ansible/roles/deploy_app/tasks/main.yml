@@ -1,0 +1,24 @@
+---
+# tasks file for deploy_app
+
+- name: create a directory {{ deploy_app_project_src }}
+  ansible.builtin.file:
+    path: "{{ deploy_app_project_src }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: template a file {{ deploy_app_project_src }}/deployment.yml
+  ansible.builtin.template:
+    src: deployment.yml.j2
+    dest: "{{ deploy_app_project_src }}/deployment.yml"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: false
+
+- name: deploy_app
+  ansible.builtin.shell: kubectl apply -f {{ deploy_app_project_src }}/deployment.yml
+  when: 
+    - "'k3s-master' in group_names"

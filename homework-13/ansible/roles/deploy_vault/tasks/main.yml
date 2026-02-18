@@ -1,0 +1,95 @@
+---
+# tasks file for deploy_vault
+
+- name: create a directory {{ deploy_vault_project_src }}
+  ansible.builtin.file:
+    path: "{{ deploy_vault_project_src }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: download "vault_helm_chart_{{ deploy_vault_vault_helm_chart_ver }}.tar.gz"
+  ansible.builtin.get_url:
+    url: "https://github.com/hashicorp/vault-helm/archive/refs/tags/{{ deploy_vault_vault_helm_chart_ver }}.tar.gz"
+    dest: "{{ deploy_vault_project_src }}/vault_helm_chart_{{ deploy_vault_vault_helm_chart_ver }}.tar.gz"
+    mode: '0644'
+
+- name: install vault helm chart
+  ansible.builtin.shell: |
+      helm install vault "{{ deploy_vault_project_src }}/vault_helm_chart_{{ deploy_vault_vault_helm_chart_ver }}.tar.gz" \
+      --namespace vault \
+      --create-namespace \
+      --set "server.enabled=true" \
+      --set "ui.enabled=true" \
+      --set "ui.activeVaultPodOnly=true" \
+      --set "server.image.tag={{ deploy_vault_vault_ver }}" \
+      --set "server.ha.enabled=true" \
+      --set "server.ha.replicas=3" \
+      --set "server.ha.raft.enabled=true" \
+      --set "server.dataStorage.storageClass=longhorn" \
+      --set "server.dataStorage.size=10Gi" \
+      --set "server.dataStorage.accessMode=ReadWriteOnce" \
+      --set "server.ingress.enabled=true" \
+      --set "server.ingress.ingressClassName=traefik" \
+      --set "server.ingress.hosts[0].host=vault.k3s.local" \
+      --set ingress.hosts[0].paths[0].path=/ \
+      --set ingress.hosts[0].paths[0].backend.service.name=vault-ui \
+      --set ingress.hosts[0].paths[0].backend.service.port.number=8200 \
+      --set "injector.enabled=true" \
+      --set "injector.replicas=3" \
+      --set "injector.leaderElector.enabled=true" \
+      --set "injector.image.tag={{ deploy_vault_injector_ver }}"
+  ignore_errors: yes
+
+- name: wait 30 sec
+  ansible.builtin.wait_for:
+    timeout: 30
+
+- name: unseal vault-0
+  ansible.builtin.shell: kubectl exec -n vault vault-0 -- vault operator unseal {{ deploy_vault_unseal_token }}
+
+- name: unseal vault-1
+  ansible.builtin.shell: kubectl exec -n vault vault-1 -- vault operator unseal {{ deploy_vault_unseal_token }}
+
+- name: unseal vault-2
+  ansible.builtin.shell: kubectl exec -n vault vault-2 -- vault operator unseal {{ deploy_vault_unseal_token }}
+
+- name: wait 30 sec
+  ansible.builtin.wait_for:
+    timeout: 30
+
+- name: login vault-0
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- vault login hvs.bamJ8arDYNIUJ0EU8GVVLblQ
+
+- name: enable k8s auth engine
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- vault auth enable kubernetes
+  ignore_errors: yes
+
+- name: create k8s auth
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- vault write auth/kubernetes/config \
+    kubernetes_host="https://kubernetes.default.svc" \
+    kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+    token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+
+- name: create acl
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- sh -c "
+      echo 'path \"database/creds/mysql-role\" {
+        capabilities = [\"read\"]
+      }
+      path \"database/creds/mysql-role\" {
+        capabilities = [\"list\"]
+      }' | vault policy write -address=http://127.0.0.1:8200 myapp-policy -
+    "
+
+- name: create role
+  ansible.builtin.shell: |
+    kubectl exec -n vault vault-0 -- vault write auth/kubernetes/role/myapp-role \
+    bound_service_account_names=myapp-sa \
+    bound_service_account_namespaces=default \
+    policies=myapp-policy \
+    ttl=24h

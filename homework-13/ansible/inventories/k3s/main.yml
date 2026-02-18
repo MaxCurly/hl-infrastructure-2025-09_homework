@@ -1,0 +1,10 @@
+all:
+  children:
+    k3s-master:
+      hosts:
+        k3s-master01:
+
+  hosts:
+    k3s-master01:
+      ansible_host: 10.10.5.191
+

@@ -1,0 +1,4 @@
+inventory_roles:
+  - deploy_vault
+  - deploy_app
+  - configure_vault_db_connection
