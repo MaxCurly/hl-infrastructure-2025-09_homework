@@ -1,0 +1,22 @@
+---
+# tasks file for deploy_cephadm
+
+- name: download ceph GPG key
+  ansible.builtin.get_url:
+    url: https://download.ceph.com/keys/release.asc
+    dest: /etc/apt/keyrings/ceph.asc
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: add ceph repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/ceph.asc] https://download.ceph.com/debian-tentacle/ {{ ansible_distribution_release }} main"
+    state: present
+    filename: ceph
+
+- name: install cephadm
+  ansible.builtin.apt:
+    name: "cephadm={{ deploy_cephadm_cephadm_ver }}"
+    state: present
+    update_cache: true

@@ -1,0 +1,16 @@
+all:
+  children:
+    client:
+      hosts:
+        client[01:03]:
+
+  hosts:
+    client01:
+      ansible_host: 10.10.5.111
+      ansible_python_interpreter : /usr/bin/python3
+    client02:
+      ansible_host: 10.10.5.112
+      ansible_python_interpreter : /usr/bin/python3
+    client03:
+      ansible_host: 10.10.5.113
+      ansible_python_interpreter : /usr/bin/python3

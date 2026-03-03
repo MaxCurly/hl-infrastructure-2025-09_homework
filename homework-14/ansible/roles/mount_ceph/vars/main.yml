@@ -1,0 +1,4 @@
+---
+# vars file for mount_cephfs
+
+mount_cephfs_ceph_common_ver : 20.2.0-1jammy

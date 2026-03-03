@@ -1,0 +1,4 @@
+---
+# vars file for deploy_cephadm
+
+deploy_cephadm_cephadm_ver : 20.2.0-1jammy
