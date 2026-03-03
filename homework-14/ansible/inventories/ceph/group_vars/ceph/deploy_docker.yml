@@ -1,0 +1,5 @@
+deploy_docker_docker_ce_ver             : 5:29.2.1-1~ubuntu.22.04~jammy
+deploy_docker_docker_ce_cli_ver         : 5:29.2.1-1~ubuntu.22.04~jammy
+deploy_docker_containerd_io_ver         : 2.2.1-1~ubuntu.22.04~jammy
+deploy_docker_docker_buildx_plugin_ver  : 0.31.1-1~ubuntu.22.04~jammy
+deploy_docker_docker_compose_plugin_ver : 5.1.0-1~ubuntu.22.04~jammy

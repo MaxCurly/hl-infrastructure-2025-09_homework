@@ -1,0 +1,147 @@
+---
+# tasks file for deploy_ceph_cluster
+
+- name: copy a file /tmp/ceph.key
+  ansible.builtin.copy:
+    src: ceph.key
+    dest: /tmp/ceph.key
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: copy a file /tmp/ceph.pub
+  ansible.builtin.copy:
+    src: ceph.pub
+    dest: /tmp/ceph.pub
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: add ceph public key in authorized_key
+  ansible.builtin.authorized_key:
+    user: root
+    state: present
+    key: "{{ lookup('file', 'ceph.pub') }}"
+    manage_dir: yes
+    exclusive: no
+
+- name: bootstrap new ceph cluster
+  ansible.builtin.shell: |
+    cephadm bootstrap \
+    --mon-ip 10.10.5.101 \
+    --ssh-private-key /tmp/ceph.key \
+    --ssh-public-key /tmp/ceph.pub \
+    --initial-dashboard-user admin \
+    --initial-dashboard-password 12345678
+  args:
+    creates: /etc/ceph/ceph.conf
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+
+- name: add ceph02 to cluster
+  ansible.builtin.shell: cephadm shell -- ceph orch host add ceph02 10.10.5.102
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add ceph03 to cluster
+  ansible.builtin.shell: cephadm shell -- ceph orch host add ceph03 10.10.5.103
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add label "_admin" to ceph02
+  ansible.builtin.shell: cephadm shell -- ceph orch host label add ceph02 _admin
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add label "_admin" to ceph03
+  ansible.builtin.shell: cephadm shell -- ceph orch host label add ceph03 _admin
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add mon placement
+  ansible.builtin.shell: cephadm shell -- ceph orch apply mon --placement="ceph01,ceph02,ceph03"
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add osd
+  ansible.builtin.shell: cephadm shell -- ceph orch apply osd --all-available-devices
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+
+- name: add label "mds" to ceph01
+  ansible.builtin.shell: cephadm shell -- ceph orch host label add ceph01 mds
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add label "mds" to ceph02
+  ansible.builtin.shell: cephadm shell -- ceph orch host label add ceph02 mds
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add label "mds" to ceph03
+  ansible.builtin.shell: cephadm shell -- ceph orch host label add ceph03 mds
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: create ceph rbd pool
+  ansible.builtin.shell: |
+    cephadm shell -- ceph osd pool create rbd 256 256 replicated
+    cephadm shell -- ceph osd pool set rbd size 3
+    cephadm shell -- ceph osd pool set rbd min_size 2
+    cephadm shell -- rbd pool init rbd
+    cephadm shell -- ceph osd pool set-quota rbd max_bytes 200G
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: create rbd images
+  ansible.builtin.shell: |
+    cephadm shell -- rbd create rbd/disk1 --size 10G
+    cephadm shell -- rbd create rbd/disk2 --size 10G
+    cephadm shell -- rbd create rbd/disk3 --size 10G
+  when: 
+    - deploy_ceph_bootstrap_node == true
+  ignore_errors: yes
+
+- name: create client-rbd user
+  ansible.builtin.shell: |
+    cephadm shell -- ceph auth get-or-create client.client-rbd mon 'profile rbd' osd 'profile rbd pool=rbd' mgr 'profile rbd pool=rbd'
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: add mds placement
+  ansible.builtin.shell: cephadm shell -- ceph orch apply mds cephfs --placement="ceph01,ceph02,ceph03"
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: create cephfs data pool
+  ansible.builtin.shell: |
+    cephadm shell -- ceph osd pool create cephfs_data 128 128 replicated
+    cephadm shell -- ceph osd pool set cephfs_data size 3
+    cephadm shell -- ceph osd pool set cephfs_data min_size 2
+    cephadm shell -- ceph osd pool set-quota cephfs_data max_bytes 100G
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: create cephfs metadata pool
+  ansible.builtin.shell: |
+    cephadm shell -- ceph osd pool create cephfs_metadata 32 32 replicated
+    cephadm shell -- ceph osd pool set cephfs_metadata size 3
+    cephadm shell -- ceph osd pool set cephfs_metadata min_size 2
+    cephadm shell -- ceph osd pool set-quota cephfs_metadata max_bytes 10G
+
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: create cephfs
+  ansible.builtin.shell: |
+    cephadm shell -- ceph fs new cephfs cephfs_metadata cephfs_data
+  when: 
+    - deploy_ceph_bootstrap_node == true
+
+- name: create client user
+  ansible.builtin.shell: |
+    cephadm shell -- ceph fs authorize cephfs client.client / rw
+  when: 
+    - deploy_ceph_bootstrap_node == true

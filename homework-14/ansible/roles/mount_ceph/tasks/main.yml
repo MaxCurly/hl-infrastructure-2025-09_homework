@@ -1,0 +1,77 @@
+---
+# tasks file for mount_cephfs
+
+- name: download ceph GPG key
+  ansible.builtin.get_url:
+    url: https://download.ceph.com/keys/release.asc
+    dest: /etc/apt/keyrings/ceph.asc
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: add ceph repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/ceph.asc] https://download.ceph.com/debian-tentacle/ {{ ansible_distribution_release }} main"
+    state: present
+    filename: ceph
+
+- name: install ceph-common
+  ansible.builtin.apt:
+    name: "ceph-common={{ mount_cephfs_ceph_common_ver }}"
+    state: present
+    update_cache: true
+
+- name: copy ceph.client.client.keyring 
+  ansible.builtin.copy:
+    src: ceph.client.client.keyring
+    dest: /etc/ceph/ceph.client.client.keyring
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: copy ceph.client.client-rbd.keyring 
+  ansible.builtin.copy:
+    src: ceph.client.client-rbd.keyring
+    dest: /etc/ceph/ceph.client.client-rbd.keyring
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: copy rbdmap
+  ansible.builtin.template:
+    src: rbdmap.j2
+    dest: /etc/ceph/rbdmap
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: start and enable rdbmap
+  ansible.builtin.service:
+    name: rbdmap
+    state: started
+    enabled: yes
+
+- name: copy ceph.conf
+  ansible.builtin.copy:
+    src: ceph.conf
+    dest: /etc/ceph/ceph.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: create directory for mount
+  ansible.builtin.file:
+    path: /mnt/cephfs
+    state: directory
+    mode: '0644'
+    owner: root
+    group: root
+    
+- name: add cephfs entry to fstab and mount
+  ansible.posix.mount:
+    path: /mnt/cephfs
+    src: "10.10.5.101:6789,10.10.5.102:6789,10.10.5.103:6789:/"
+    fstype: ceph
+    opts: "name=client,secretfile=/etc/ceph/ceph.client.client.keyring,noatime,_netdev"
+    state: mounted
+

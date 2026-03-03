@@ -1,0 +1,20 @@
+all:
+  children:
+    ceph:
+      hosts:
+        ceph[01:04]:
+
+  hosts:
+    ceph01:
+      ansible_host: 10.10.5.101
+      ansible_python_interpreter : /usr/bin/python3
+    ceph02:
+      ansible_host: 10.10.5.102
+      ansible_python_interpreter : /usr/bin/python3
+    ceph03:
+      ansible_host: 10.10.5.103
+      ansible_python_interpreter : /usr/bin/python3
+    ceph04:
+      ansible_host: 10.10.5.104
+      ansible_python_interpreter : /usr/bin/python3
+

@@ -1,0 +1,4 @@
+inventory_roles:
+  - deploy_docker
+  - deploy_cephadm
+  - deploy_ceph_cluster
